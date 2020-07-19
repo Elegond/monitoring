@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="Monitoring-Dateien/bootstrap.css">
+
+        <!-- jQuery library -->
+        <script src="Monitoring-Dateien/jquery.js"></script>
+
+        <!-- Popper JS -->
+        <script src="Monitoring-Dateien/popper.js"></script>
+
+        <!-- Latest compiled JavaScript -->
+        <script src="Monitoring-Dateien/bootstrap.js"></script>
+		<title>Monitoring</title>
+        <style>
+		
+		.card-header{
+			text-align:center;
+		}
+        </style>
+
+    </head>
+    <body id="body" class="bg-light">
+
+    
+
+
+        <div id="alert"><div id="clost" class="alert alert-danger"><div class="row"><div class="col"><strong>Connection to "ws://127.0.0.1:8080" lost</strong></div><div class="col"><button type="button" class="btn btn-success btn-sm" onclick="window.location.assign('http://monitor.saretzki.work/client/')" style="width: 100%;">Download Monitoring Client</button></div><div class="col" style="text-align: right;"><button type="button" class="btn btn-danger btn-sm" onclick="webs = websock();" style="width: 150px;">Reconnect</button></div></div></div></div>
+		<div id="connect" style="display:initial;">
+		<div class="card bg-dark text-light" style="margin: 10px;">
+			  <div class="card-header">Server</div>
+			  <div class="card-body">
+				   <div class="form-group">
+					<label for="ws">Websocket Server:</label>
+					<input type="Text" class="form-control" placeholder="Enter Websocket Server URL z.B.: ws://127.0.0.1:8080" id="ws">
+				  </div>
+					<button type="button" class="btn btn-danger btn-sm" onclick="setCookie(document.getElementById('ws').value)" style="width: 100%;">Save</button>
+			  </div>
+			</div>
+		
+		</div>
+		<div id="client" style="display:none;">
+			<div style="margin:15px;">
+				<div class="row">
+					<div class="col">
+						<h3 id="ti">
+                            0/0/0
+						</h3>
+					</div>
+				  <div class="col">
+						<button type="button" class="btn btn-success btn-sm" onclick="window.location.assign('http://monitor.saretzki.work/client/')" style="width: 100%;">Download Monitoring Client</button>
+					</div>
+					<div class="col" style="text-align: right;">
+						<a>Intervall:</a>
+						<button type="button" class="btn btn-primary btn-sm" onclick="sendaction('sleepminus','')" style="width: 26px;">-</button>
+						<a id="sleep">1</a>
+						<button type="button" class="btn btn-primary btn-sm" onclick="sendaction('sleepplus','')" style="width: 26px;">+</button>
+					</div>
+					  
+				</div>
+			</div>
+		
+			<div class="card bg-dark text-light" style="margin: 10px;">
+			  <div class="card-header">CPU</div>
+			  <div class="card-body"><div id="cpu" style=""></div>
+				  <div id="cpu_button">
+					<button type="button" class="btn btn-danger btn-sm" onclick="" style="width: 100%;">Disable CPU Monitoring</button>
+				  </div>
+			  </div>
+			</div>
+
+			
+
+			<div class="card bg-dark text-light" style="margin: 10px;">
+			  <div class="card-header">RAM</div>
+			  <div class="card-body"><div class="progress bg-secondary" style="height:20px;margin-bottom: 10px;"><div id="mem" class="progress-bar progress-bar-striped  bg-success" style="height:20px;width:0%"></div>	</div>
+			  <div id="mem_button">
+				<button type="button" class="btn btn-danger btn-sm" onclick="" style="width: 100%;">Disable RAM Monitoring</button>
+			  </div>
+			  </div>
+			  
+			</div>
+			
+			<div class="card bg-dark text-light" style="margin: 10px;">
+			  <div class="card-header">STORAGE</div>
+			  <div class="card-body">
+			  <div id="speicher" style=""></div>
+				<div class="row" id="speicher_button">
+				
+				  <div class="col">
+				  <button type="button" class="btn btn-danger btn-sm" onclick="" style="width: 100%;">Disable CPU Monitoring</button>
+				  </div>
+				  
+				  <div class="col">
+				  <button type="button" class="btn btn-danger btn-sm" onclick="" style="width: 100%;">Disable CPU Monitoring</button>
+				  </div>
+				  
+				  <div class="col">
+				  <button type="button" class="btn btn-danger btn-sm" onclick="" style="width: 100%;">Disable CPU Monitoring</button>
+				  </div>
+				  
+				  <div class="col">
+				  <button type="button" class="btn btn-danger btn-sm" onclick="" style="width: 100%;">Disable CPU Monitoring</button>
+				  </div>
+				</div>
+			  
+			  </div>
+			</div>
+		
+		</div>
+                <script>
+
+function getCookie(cname) {
+  var name = cname + "=";
+  var decodedCookie = decodeURIComponent(document.cookie);
+  var ca = decodedCookie.split(';');
+  for(var i = 0; i <ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
+function sleepFor( sleepDuration ){
+    var now = new Date().getTime();
+    while(new Date().getTime() < now + sleepDuration){ /* do nothing */ } 
+}
+function log(msg) {
+    console.log(msg );
+}
+
+function update(msg) {
+    const obj = JSON.parse(msg);
+    document.getElementById('ti').innerText = ""+obj.time;
+
+    document.getElementById('sleep').innerText = obj.sleep;
+    document.getElementById('speicher').innerHTML = "";
+    document.getElementById('cpu_button').innerHTML = "";
+    document.getElementById('mem_button').innerHTML = "";
+	
+    document.getElementById('speicher_button').innerHTML = "";
+
+    if (obj.mem.enabled)
+        document.getElementById('mem_button').innerHTML +='<button type="button" style="width: 100%;" class="btn btn-danger btn-sm" onclick="sendaction('+"'disable','MEM'"+')" style="">MEM</button>';
+    else
+        document.getElementById('mem_button').innerHTML +='<button type="button" style="width: 100%;" class="btn btn-success btn-sm" onclick="sendaction('+"'enable','MEM'"+')" style="">MEM</button>';
+    if (obj.cpu["enabled"])
+        document.getElementById('cpu_button').innerHTML +='<button type="button" style="width: 100%;" class="btn btn-danger btn-sm" onclick="sendaction('+"'disable','CPU'"+')" style="">CPU</button>';
+    else
+        document.getElementById('cpu_button').innerHTML +='<button type="button" style="width: 100%;" class="btn btn-success btn-sm" onclick="sendaction('+"'enable','CPU'"+')" style="">CPU</button>';
+
+
+    for (pfad in obj.speicher){
+        if (obj.speicher[pfad]["enabled"]){
+
+            document.getElementById('speicher').innerHTML += '<div class="progress bg-secondary" style="height:20px;margin-bottom: 10px;"><div id="sp_'+pfad+'" class="progress-bar progress-bar-striped " style="height:20px;width:'+obj.speicher[pfad]["used"][2]+'%">'+pfad+": "+ obj.speicher[pfad]["used"][0]+" " + obj.speicher[pfad]["used"][1]+ ' / '+ obj.speicher[pfad]["total"][0]+" " + obj.speicher[pfad]["total"][1]+ '</div>	</div>';
+            document.getElementById('speicher_button').innerHTML +='<div class="col"><button type="button" class="btn btn-danger btn-sm" onclick="sendaction('+"'disable','"+(pfad.includes("\\")?pfad+"\\":pfad)+"'"+')" style="width: 100%;">'+pfad+'</button></div>';
+            if (obj.speicher[pfad]["error"]<=obj.speicher[pfad]["used"][2]){
+                document.getElementById('sp_'+pfad).classList.add("bg-danger")
+                document.getElementById('sp_'+pfad).classList.remove("bg-success")
+                document.getElementById('sp_'+pfad).classList.remove("bg-warning")
+            }else if (obj.speicher[pfad]["warning"]<=obj.speicher[pfad]["used"][2]){
+
+                document.getElementById('sp_'+pfad).classList.add("bg-warning")
+                document.getElementById('sp_'+pfad).classList.remove("bg-danger")
+                document.getElementById('sp_'+pfad).classList.remove("bg-success")
+            }else{
+                document.getElementById('sp_'+pfad).classList.remove("bg-warning")
+                document.getElementById('sp_'+pfad).classList.remove("bg-danger")
+                document.getElementById('sp_'+pfad).classList.add("bg-success")
+            }
+
+        }
+        else{
+            document.getElementById('speicher').innerHTML += '<div class="progress bg-secondary" style="height:20px;margin-bottom: 10px;"><div id="sp_'+pfad+'" class="progress-bar progress-bar-striped" style="height:20px;width:100%">'+pfad+ '</div>	</div>';
+            document.getElementById('speicher_button').innerHTML +='<div class="col"><button type="button" class="btn btn-success btn-sm" onclick="sendaction('+"'enable','"+(pfad.includes("\\")?pfad+"\\":pfad)+"'"+')" style="width: 100%;">'+pfad+'</button></div>';
+
+
+        }
+    }
+    if (obj.cpu.enabled){
+		if (typeof(document.getElementById('cpu_platzhalter')) != 'undefined' && document.getElementById('cpu_platzhalter') != null) {
+			document.getElementById('cpu').innerHTML ="";
+		}
+
+        for (cpu in obj.cpu.use){
+            var element =  document.getElementById('cpu_'+cpu);
+            if (!(typeof(element) != 'undefined' && element != null)) {
+
+                document.getElementById('cpu').innerHTML += '<div class="progress bg-secondary" style="height:20px;margin-bottom: 10px;"><div id="cpu_'+cpu+'"class="progress-bar progress-bar-striped  '+(obj.cpu["error"]<obj.cpu.use[cpu]?"bg-danger":(obj.cpu["warning"]<obj.cpu.use[cpu]?"bg-warning":"bg-success"))+'" style="height:20px;width:'+obj.cpu.use[cpu]+'%">CPU'+cpu+": "+ obj.cpu.use[cpu]+'%</div>	</div>';
+                log("create cpu_"+cpu)
+            } else {
+                if (obj.cpu["error"]<=obj.cpu.use[cpu]){
+                    document.getElementById('cpu_'+cpu).classList.add("bg-danger")
+                    document.getElementById('cpu_'+cpu).classList.remove("bg-success")
+                    document.getElementById('cpu_'+cpu).classList.remove("bg-warning")
+                }else if (obj.cpu["warning"]<=obj.cpu.use[cpu]){
+
+                    document.getElementById('cpu_'+cpu).classList.add("bg-warning")
+                    document.getElementById('cpu_'+cpu).classList.remove("bg-danger")
+                    document.getElementById('cpu_'+cpu).classList.remove("bg-success")
+                }else{
+
+                    document.getElementById('cpu_'+cpu).classList.remove("bg-warning")
+                    document.getElementById('cpu_'+cpu).classList.remove("bg-danger")
+                    document.getElementById('cpu_'+cpu).classList.add("bg-success")
+                }
+                document.getElementById('cpu_'+cpu).style.width = obj.cpu.use[cpu]+'%'
+                document.getElementById('cpu_'+cpu).innerText = 'CPU'+cpu+': '+ obj.cpu.use[cpu]+'%';
+
+            }
+        }
+    }else{
+        document.getElementById('cpu').innerHTML ="";
+		document.getElementById('cpu').innerHTML += '<div id="cpu_platzhalter" class="progress bg-secondary" style="height:20px;margin-bottom: 10px;"><div id="cpu"class="progress-bar progress-bar-striped " style="height:20px;width:100%">CPU</div>	</div>';
+	}
+    if (obj.mem.enabled){
+        if (obj.mem["error"]<=obj.mem.used[2]){
+            document.getElementById('mem').classList.add("bg-danger")
+            document.getElementById('mem').classList.remove("bg-success")
+            document.getElementById('mem').classList.remove("bg-warning")
+        }else if (obj.mem["warning"]<=obj.mem.used[2]){
+
+            document.getElementById('mem').classList.remove("bg-danger")
+            document.getElementById('mem').classList.remove("bg-success")
+            document.getElementById('mem').classList.add("bg-warning")
+        }else{
+            document.getElementById('mem').classList.remove("bg-danger")
+            document.getElementById('mem').classList.add("bg-success")
+            document.getElementById('mem').classList.remove("bg-warning")
+        }
+        document.getElementById('mem').style.width = obj.mem.used[2]+'%'
+        document.getElementById('mem').innerText = 'RAM: '+ obj.mem.used[0]+ obj.mem.used[1]+' / '+ obj.mem.total[0]+ obj.mem.total[1]+'';
+    }else{
+        document.getElementById('mem').innerText="RAM";
+        document.getElementById('mem').classList.remove("bg-danger")
+        document.getElementById('mem').classList.remove("bg-success")
+        document.getElementById('mem').classList.remove("bg-warning")
+        document.getElementById('mem').style.width ='100%'
+    }
+
+}
+function sendaction(a,tar){
+    log(a)
+    log(tar)
+    var send={action: a, target: tar}
+    log(send)
+    webs.send(JSON.stringify(send));
+    log(JSON.stringify(send))
+}
+function websock(){
+    // setup websocket with callbacks
+    var ws = new WebSocket(getCookie("websocket"));
+    ws.onopen = function() {
+        log('CONNECT');
+		document.getElementById('client').style.display ='initial'
+		document.getElementById('connect').style.display ='none'
+        document.getElementById('alert').innerHTML= "";
+    };
+    ws.onclose = function() {
+        log('DISCONNECT');
+		document.getElementById('client').style.display ='none'
+		
+		document.getElementById('connect').style.display ='initial'
+        document.getElementById('alert').innerHTML= '<div id="clost" class="alert alert-danger"><div class="row"><div class="col"><strong>Connection to "'+getCookie("websocket")+'" lost</strong></div><div class="col"><button type="button" class="btn btn-success btn-sm" onclick="window.location.assign('+"'http://monitor.saretzki.work/client/'"+')" style="width: 100%;">Download Monitoring Client</button></div><div class="col" style="text-align: right;"><button type="button" class="btn btn-danger btn-sm" onclick="webs = websock();" style="width: 150px;">Reconnect</button></div></div></div>';
+        sleepFor( 1000 )
+		//webs = websock();
+    };
+    ws.onmessage = function(event) {
+        log('MESSAGE: ' + event.data);
+        update(event.data);
+    };
+    return ws;
+}
+function setCookie(server){
+	var d = new Date();
+	d.setTime(d.getTime() + (365*24*60*60*1000));
+	var expires = "expires="+ d.toUTCString();
+	document.cookie = "websocket="+server+";" + expires + ";path=/";
+  checkCookie()
+  document.getElementById('alert').innerHTML= '<div id="clost" class="alert alert-warning"><div class="row"><div class="col"><strong>Connecting to "'+getCookie("websocket")+'" </strong></div><div class="col"><button type="button" class="btn btn-success btn-sm" onclick="window.location.assign('+"'http://monitor.saretzki.work/client/'"+')" style="width: 100%;">Download Monitoring Client</button></div><div class="col" style="text-align: right;"><button type="button" class="btn btn-danger btn-sm" onclick="webs = websock();" style="width: 150px;">Reconnect</button></div></div></div>';
+  try{
+	webs = websock();
+  }catch{
+    document.getElementById('alert').innerHTML= '<div id="clost" class="alert alert-danger"><div class="row"><div class="col"><strong>Connection to "'+getCookie("websocket")+'" lost</strong></div><div class="col"><button type="button" class="btn btn-success btn-sm" onclick="window.location.assign('+"'http://monitor.saretzki.work/client/'"+')" style="width: 100%;">Download Monitoring Client</button></div><div class="col" style="text-align: right;"><button type="button" class="btn btn-danger btn-sm" onclick="webs = websock();" style="width: 150px;">Reconnect</button></div></div></div>';
+        
+  }
+}
+function checkCookie() {
+  if (getCookie("websocket") == "") {
+	var d = new Date();
+	d.setTime(d.getTime() + (365*24*60*60*1000));
+	var expires = "expires="+ d.toUTCString();
+	document.cookie = "websocket=ws://127.0.0.1:8080;" + expires + ";path=/";
+    log("Setting Default Cookie")
+  }
+}
+checkCookie()
+if (getCookie("websocket") == "") {
+  document.body.style = 'text-align: center';
+  document.body.innerHTML = '<h1>Diese Webseite braucht Cookies<br>Der Cookie konnte nicht gesetzt werden!</1> <h6>Chrome lässt keine Cookies von lokal geöffneten Dateien zu!<br><a href="http://monitor.saretzki.work">http://monitor.saretzki.work</a></h6>';
+}else{
+var webs = websock();
+}
+
+        </script>
+    
+
+</body></html>
